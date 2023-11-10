@@ -1,0 +1,158 @@
+{
+  "name": "istio_traffic_routing_misconfiguration_incident",
+  "description": "This incident type involves a misconfiguration in the Istio traffic routing. Istio is an open-source service mesh that provides a way to connect, manage, and secure microservices. A misconfiguration in the Istio traffic routing can cause issues with the routing of traffic between microservices, leading to service disruptions, outages, and performance degradation. The misconfiguration can occur due to human error, incorrect configuration settings, or misaligned policies. Identifying and resolving this incident requires analyzing the Istio configuration, identifying the misconfiguration, and taking corrective actions.",
+  "params": [
+    {
+      "name": "ORIGINAL_ROUTE",
+      "value": ""
+    },
+    {
+      "name": "POD_NAME",
+      "value": ""
+    },
+    {
+      "name": "NEW_ROUTE",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    },
+    {
+      "name": "SERVICE_NAME",
+      "value": ""
+    },
+    {
+      "name": "GATEWAY",
+      "value": ""
+    },
+    {
+      "name": "WORKLOAD_NAME",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Istio Traffic Routing Misconfiguration Incident\nThis incident type involves a misconfiguration in the Istio traffic routing. Istio is an open-source service mesh that provides a way to connect, manage, and secure microservices. A misconfiguration in the Istio traffic routing can cause issues with the routing of traffic between microservices, leading to service disruptions, outages, and performance degradation. The misconfiguration can occur due to human error, incorrect configuration settings, or misaligned policies. Identifying and resolving this incident requires analyzing the Istio configuration, identifying the misconfiguration, and taking corrective actions."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if Istio is installed"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `istioctl version`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if the Istio control plane is healthy"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | limit=1 | random=1 | `kubectl -n istio-system get pods`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the configuration of the Istio ingress gateway"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | limit=1 | random=1 | `kubectl -n istio-system describe service istio-ingressgateway`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Istio VirtualServices and DestinationRules"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_get_vs_dr($NAMESPACE)"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Kubernetes Services and Endpoints"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_get_services_and_endpoints($NAMESPACE)"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Kubernetes Ingress resource, if used"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | limit=1 | random=1 | `kubectl -n ${NAMESPACE} describe ingress`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the logs of the Istio sidecar containers"
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | limit=1 | random=1 | `kubectl -n ${NAMESPACE} logs ${POD_NAME} -c istio-proxy`"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the Istio traffic routing configuration for any errors or inconsistencies. Verify that the routing rules are correctly defined and applied to the relevant services and workloads."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_get_istio_traffic_routing_configuration($NAMESPACE, $SERVICE_NAME, $WORKLOAD_NAME)"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Update the traffic routing rules to correct any misconfigurations. This may involve modifying the routing rules, updating the service definitions, or changing the networking configuration."
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "pod | k8s_cluster_name=$K8S_CLUSTER_NAME | app='shoreline' | random=1 | limit=1 | invoke_update_istio_virtual_service_route($ORIGINAL_ROUTE, $NEW_ROUTE, $NAMESPACE, $SERVICE_NAME, $GATEWAY)"
+    }
+  ]
+}
